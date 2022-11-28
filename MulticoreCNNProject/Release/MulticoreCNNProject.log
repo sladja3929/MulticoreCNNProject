@@ -1,8 +1,12 @@
-﻿  main.c
-C:\Users\user\source\repos\MulticoreCNNProject\MulticoreCNNProject\main.c(133,16): warning C4101: 'end' :참조되지 않은 지역 변수입니다.
+﻿  cnn_seq.c
+C:\Users\YG\source\repos\MulticoreCNNProject\MulticoreCNNProject\cnn_seq.c(110,30): warning C4244: '+=': 'double'에서 'float'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+C:\Users\YG\source\repos\MulticoreCNNProject\MulticoreCNNProject\cnn_seq.c(113,41): warning C4244: '=': 'double'에서 'float'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+  compare.c
+  main.c
+C:\Users\YG\source\repos\MulticoreCNNProject\MulticoreCNNProject\main.c(133,16): warning C4101: 'end' :참조되지 않은 지역 변수입니다.
 LINK : warning LNK4075: '/INCREMENTAL'이(가) '/LTCG' 사양으로 인해 무시됩니다.
   코드를 생성하고 있습니다.
-  Previous IPDB and IOBJ mismatch, fall back to full compilation.
+  Previous IPDB was built with incompatible compiler, fall back to full compilation.
   All 25 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
   코드를 생성했습니다.
-  MulticoreCNNProject.vcxproj -> C:\Users\user\source\repos\MulticoreCNNProject\Release\MulticoreCNNProject.exe
+  MulticoreCNNProject.vcxproj -> C:\Users\YG\source\repos\MulticoreCNNProject\Release\MulticoreCNNProject.exe
