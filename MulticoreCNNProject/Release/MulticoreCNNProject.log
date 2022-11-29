@@ -1,9 +1,7 @@
-﻿  main.c
-C:\Users\YG\source\repos\MulticoreCNNProject\MulticoreCNNProject\main.c(133,16): warning C4101: 'end' :참조되지 않은 지역 변수입니다.
-LINK : warning LNK4075: '/INCREMENTAL'이(가) '/LTCG' 사양으로 인해 무시됩니다.
+﻿LINK : warning LNK4075: '/INCREMENTAL'이(가) '/LTCG' 사양으로 인해 무시됩니다.
   코드를 생성하고 있습니다.
-  0 of 25 functions ( 0.0%) were compiled, the rest were copied from previous compilation.
-    0 functions were new in current compilation
-    0 functions had inline decision re-evaluated but remain unchanged
   코드를 생성했습니다.
-  MulticoreCNNProject.vcxproj -> C:\Users\YG\source\repos\MulticoreCNNProject\Release\MulticoreCNNProject.exe
+  15 of 25 functions (60.0%) were compiled, the rest were copied from previous compilation.
+    1 functions were new in current compilation
+    3 functions had inline decision re-evaluated but remain unchanged
+  MulticoreCNNProject.vcxproj -> C:\Users\user\source\repos\MulticoreCNNProject\Release\MulticoreCNNProject.exe

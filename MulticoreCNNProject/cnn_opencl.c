@@ -187,51 +187,11 @@ void cnn_init() {
 	CHECK_ERROR(err);
 }
 
-void pooling2x2(float *input, float *output, int N) {
-	size_t global_size[2] = { N * 2, N * 2 };
-
-	cl_mem buf_input = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(cl_float) * ((N * 2) * (N * 2)), input, &err);
-	CHECK_ERROR(err);
-
-	cl_mem buf_output = clCreateBuffer(context, CL_MEM_WRITE_ONLY, sizeof(cl_float) * (N * N), NULL, &err);
-	CHECK_ERROR(err);
-
-	err = clSetKernelArg(pooling_kernel, 0, sizeof(cl_mem), &buf_input);
-	CHECK_ERROR(err);
-
-	err = clSetKernelArg(pooling_kernel, 1, sizeof(cl_mem), &buf_output);
-	CHECK_ERROR(err);
-
-	err = clSetKernelArg(pooling_kernel, 2, sizeof(cl_mem), &N);
-	CHECK_ERROR(err);
-
-	err = clEnqueueNDRangeKernel(queue, pooling_kernel, 2, NULL, global_size, NULL, 0, NULL, NULL);
-	CHECK_ERROR(err);
-
-	err = clEnqueueReadBuffer(queue, buf_output, CL_TRUE, 0, sizeof(cl_float) * (N * N), output, 0, NULL, NULL);
-	CHECK_ERROR(err);
-
-	clFinish(queue);
-
-	clReleaseMemObject(buf_input);
-	clReleaseMemObject(buf_output);
-}
-
-void pooling_layer2(float *inputs, float *outputs, int D, int N) {
-	int i;
-	for (i = 0; i < D; i++) {
-		float *input = inputs + i * N * N * 4;
-		float *output = outputs + i * N * N;
-		pooling2x2(input, output, N);
-	}
-}
-
 // input is (D, N * 2, N * 2) and output is (D, N, N).
 void pooling_layer(float *inputs, float *outputs, int D, int N) {
-	size_t global_size[3] = { D, N * 2, N * 2 };
-	size_t local_size[3] = { 64, 1, 1 };
+	size_t global_size[3] = { D, N ,N };
 
-	cl_mem buf_input = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(cl_float) * (D * (N * 2) * (N * 2)), inputs, &err);
+	cl_mem buf_input = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(cl_float) * (D * N * N * 4), inputs, &err);
 	CHECK_ERROR(err);
 
 	cl_mem buf_output = clCreateBuffer(context, CL_MEM_WRITE_ONLY, sizeof(cl_float) * (D * N * N), NULL, &err);
@@ -243,13 +203,10 @@ void pooling_layer(float *inputs, float *outputs, int D, int N) {
 	err = clSetKernelArg(pooling_kernel, 1, sizeof(cl_mem), &buf_output);
 	CHECK_ERROR(err);
 
-	err = clSetKernelArg(pooling_kernel, 2, sizeof(cl_mem), &D);
+	err = clSetKernelArg(pooling_kernel, 2, sizeof(cl_int), &N);
 	CHECK_ERROR(err);
 
-	err = clSetKernelArg(pooling_kernel, 3, sizeof(cl_mem), &N);
-	CHECK_ERROR(err);
-
-	err = clEnqueueNDRangeKernel(queue, pooling_kernel, 3, NULL, global_size, local_size, 0, NULL, NULL);
+	err = clEnqueueNDRangeKernel(queue, pooling_kernel, 3, NULL, global_size, NULL, 0, NULL, NULL);
 	CHECK_ERROR(err);
 
 	err = clEnqueueReadBuffer(queue, buf_output, CL_TRUE, 0, sizeof(cl_float) * (D * N * N), outputs, 0, NULL, NULL);
