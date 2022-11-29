@@ -88,6 +88,7 @@ static void convolution_layer(float* inputs, float* outputs, float* filters, flo
  * N = input size
  */
 static void fc_layer(float* input_neuron, float* output_neuron, float* weights, float* biases, int M, int N) {
+	printf("\n%d\n", sizeof(*weights));
 	int i, j;
 	for (j = 0; j < M; j++) {
 		float sum = 0;

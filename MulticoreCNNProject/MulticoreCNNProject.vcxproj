@@ -168,6 +168,7 @@
     <None Include="answer.out" />
     <None Include="cifar10_image.bin" />
     <None Include="cifar10_label.bin" />
+    <None Include="fc_kernel.cl" />
     <None Include="network.bin" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

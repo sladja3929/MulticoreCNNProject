@@ -1,1 +1,3 @@
-﻿  MulticoreCNNProject.vcxproj -> C:\Users\YG\source\repos\MulticoreCNNProject\Debug\MulticoreCNNProject.exe
+﻿  main.c
+C:\Github\MulticoreCNNProject\MulticoreCNNProject\main.c(133,16): warning C4101: 'end' :참조되지 않은 지역 변수입니다.
+  MulticoreCNNProject.vcxproj -> C:\Github\MulticoreCNNProject\Debug\MulticoreCNNProject.exe
