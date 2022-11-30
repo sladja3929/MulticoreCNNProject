@@ -1,3 +1,7 @@
-﻿  main.c
-C:\Github\MulticoreCNNProject\MulticoreCNNProject\main.c(133,16): warning C4101: 'end' :참조되지 않은 지역 변수입니다.
-  MulticoreCNNProject.vcxproj -> C:\Github\MulticoreCNNProject\Debug\MulticoreCNNProject.exe
+﻿  cnn_seq.c
+D:\unity\MulticoreCNNProject\MulticoreCNNProject\cnn_seq.c(111,30): warning C4244: '+=': 'double'에서 'float'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+D:\unity\MulticoreCNNProject\MulticoreCNNProject\cnn_seq.c(114,41): warning C4244: '=': 'double'에서 'float'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+  sample.c
+D:\unity\MulticoreCNNProject\MulticoreCNNProject\sample.c(38,5): warning C4020: 'puts': 실제 매개 변수가 너무 많습니다.
+D:\unity\MulticoreCNNProject\MulticoreCNNProject\sample.c(59,9): warning C4020: 'puts': 실제 매개 변수가 너무 많습니다.
+  MulticoreCNNProject.vcxproj -> D:\unity\MulticoreCNNProject\Debug\MulticoreCNNProject.exe

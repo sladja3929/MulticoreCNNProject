@@ -91,7 +91,10 @@ static void fc_layer(float* input_neuron, float* output_neuron, float* weights, 
     CHECK_ERROR(err);
 
     //버퍼 오브젝트 생성
-    cl_mem buf_output = clCreateBuffer(context, CL_MEM_WRITE_ONLY, sizeof(float) * M, NULL, &err);
+    cl_mem buf_output = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(float) * M, NULL, &err);
+    CHECK_ERROR(err);
+    float tmp = 0;
+    err = clEnqueueFillBuffer(context, buf_output, &tmp, sizeof(float), 0, sizeof(float) * M, 0, NULL, NULL);
     CHECK_ERROR(err);
     cl_mem buf_input = clCreateBuffer(context, CL_MEM_READ_ONLY || CL_MEM_COPY_HOST_PTR, sizeof(float) * N, input_neuron, &err);
     CHECK_ERROR(err);

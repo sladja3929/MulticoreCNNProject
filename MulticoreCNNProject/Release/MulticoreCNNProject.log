@@ -1,10 +1,1 @@
-﻿  cnn_seq.c
-C:\Github\MulticoreCNNProject\MulticoreCNNProject\cnn_seq.c(111,30): warning C4244: '+=': 'double'에서 'float'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-C:\Github\MulticoreCNNProject\MulticoreCNNProject\cnn_seq.c(114,41): warning C4244: '=': 'double'에서 'float'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-LINK : warning LNK4075: '/INCREMENTAL'이(가) '/LTCG' 사양으로 인해 무시됩니다.
-  코드를 생성하고 있습니다.
-  2 of 25 functions ( 8.0%) were compiled, the rest were copied from previous compilation.
-    0 functions were new in current compilation
-    1 functions had inline decision re-evaluated but remain unchanged
-  코드를 생성했습니다.
-  MulticoreCNNProject.vcxproj -> C:\Github\MulticoreCNNProject\Release\MulticoreCNNProject.exe
+﻿  MulticoreCNNProject.vcxproj -> D:\unity\MulticoreCNNProject\Release\MulticoreCNNProject.exe
