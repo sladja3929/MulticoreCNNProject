@@ -97,6 +97,7 @@ static void fc_layer(float* input_neuron, float* output_neuron, float* weights, 
 		sum += biases[j];
 		output_neuron[j] = ReLU(sum);
 	}
+	printf("%f ", output_neuron[0]);
 }
 
 static void softmax(float* output, int N) {
@@ -131,9 +132,7 @@ float* alloc_layer(size_t n) {
 	return (float*)malloc(n * sizeof(float));
 }
 
-void cnn_init() {
-	// nothing to init in the sequential version
-}
+void cnn_init(){}
 
 void cnn(float* images, float** network, int* labels, float* confidences, int num_images) {
 	// slice the network into weights and biases
