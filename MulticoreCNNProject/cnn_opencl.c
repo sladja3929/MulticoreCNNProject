@@ -20,6 +20,17 @@
         exit(EXIT_FAILURE); \
     }
 
+#define CHECK_BUILD_ERROR(program) \
+	if (err == CL_BUILD_PROGRAM_FAILURE) {	\
+		size_t log_size;	\
+		clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, 0, NULL, &log_size);	\
+		printf("로그크기: %zu\n", log_size);	\
+		char *log;	\
+		MALLOC(log, char, log_size);	\
+		clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, log_size, log, NULL);	\
+		printf("%s\n", log);	\
+	}
+
 char *GetSourceCode(const char *file_name, size_t * len) {
 	int fd;
 	char *source_code;
@@ -75,6 +86,7 @@ static void convolution_layer(float *inputs, float *outputs, float *filters, flo
 
 	memset(outputs, 0, sizeof(float) * N * N * D2);
 
+	//
 	for (j = 0; j < D2; j++) {
 		for (i = 0; i < D1; i++) {
 			float *input = inputs + N * N * i;
@@ -84,6 +96,7 @@ static void convolution_layer(float *inputs, float *outputs, float *filters, flo
 		}
 	}
 
+	//
 	for (i = 0; i < D2; i++) {
 		float *output = outputs + N * N * i;
 		float bias = biases[i];
@@ -146,8 +159,12 @@ cl_device_id device;
 cl_int err;
 cl_context context;
 cl_command_queue queue;
+cl_program convolution_program;
 cl_program pooling_program;
+cl_program fc_program;
+cl_kernel convolution_kernel;
 cl_kernel pooling_kernel;
+cl_kernel fc_kernel;
 
 void cnn_init() {
 	// 플랫폼 정보 얻어오기 (플랫폼 개수 = 1)
@@ -167,23 +184,37 @@ void cnn_init() {
 	CHECK_ERROR(err);
 
 	size_t source_size;
-	const char *source_code = GetSourceCode("pooling_kernel.cl", &source_size);
+	const char *source_code = GetSourceCode("convolution_kernel.cl", &source_size);
+	convolution_program = clCreateProgramWithSource(context, 1, (const char **)&source_code, &source_size, &err);
+	CHECK_ERROR(err);
+
+	source_code = GetSourceCode("pooling_kernel.cl", &source_size);
 	pooling_program = clCreateProgramWithSource(context, 1, (const char **)&source_code, &source_size, &err);
 	CHECK_ERROR(err);
 
-	err = clBuildProgram(pooling_program, 1, &device, "-cl-fast-relaxed-math", NULL, NULL);
-	if (err == CL_BUILD_PROGRAM_FAILURE) {
-		size_t log_size;
-		clGetProgramBuildInfo(pooling_program, device, CL_PROGRAM_BUILD_LOG, 0, NULL, &log_size);
-		printf("로그크기: %zu\n", log_size);
-		char *log;
-		MALLOC(log, char, log_size);
-		clGetProgramBuildInfo(pooling_program, device, CL_PROGRAM_BUILD_LOG, log_size, log, NULL);
-		printf("%s\n", log);
-	}
+	source_code = GetSourceCode("fc_kernel.cl", &source_size);
+	fc_program = clCreateProgramWithSource(context, 1, (const char **)&source_code, &source_size, &err);
 	CHECK_ERROR(err);
 
+	//err = clBuildProgram(convolution_program, 1, &device, "-cl-fast-relaxed-math", NULL, NULL);
+	//CHECK_BUILD_ERROR(convolution_program);
+	//CHECK_ERROR(err);
+
+	err = clBuildProgram(pooling_program, 1, &device, "-cl-fast-relaxed-math", NULL, NULL);
+	CHECK_BUILD_ERROR(pooling_program);
+	CHECK_ERROR(err);
+
+	err = clBuildProgram(fc_program, 1, &device, "-cl-fast-relaxed-math", NULL, NULL);
+	CHECK_BUILD_ERROR(fc_program);
+	CHECK_ERROR(err);
+
+	//convolution_kernel = clCreateKernel(convolution_program, "convolution", &err);
+	//CHECK_ERROR(err);
+
 	pooling_kernel = clCreateKernel(pooling_program, "pooling", &err);
+	CHECK_ERROR(err);
+
+	fc_kernel = clCreateKernel(fc_program, "fc", &err);
 	CHECK_ERROR(err);
 }
 
@@ -216,6 +247,124 @@ void pooling_layer(float *inputs, float *outputs, int D, int N) {
 
 	clReleaseMemObject(buf_input);
 	clReleaseMemObject(buf_output);
+}
+
+// *Thus, input is(D1, N, N) and output is(D2, N, N)
+
+void convolution_layer2(float *inputs, float *outputs, float *filters, float *biases, int d2, int d1, int n) {
+	//memset(outputs, 0, sizeof(float) * n * n * d2);
+
+	size_t global_size[] = { d1 , d2 * n * n };
+	size_t local_size[] = { d1, 1 };
+
+	cl_mem buf_input = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(cl_float) * (d1 * n * n), inputs, &err);
+	CHECK_ERROR(err);
+
+	cl_mem buf_output = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(cl_float) * (d2 * n * n), NULL, &err);
+	CHECK_ERROR(err);
+
+	cl_mem buf_filter = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(cl_float) * (d2 * d1 * 3 * 3), filters, &err);
+	CHECK_ERROR(err);
+
+	cl_mem buf_bias = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(cl_float) * d2, biases, &err);
+	CHECK_ERROR(err);
+
+	err = clSetKernelArg(convolution_kernel, 0, sizeof(cl_mem), &buf_input);
+	CHECK_ERROR(err);
+
+	err = clSetKernelArg(convolution_kernel, 1, sizeof(cl_mem), &buf_filter);
+	CHECK_ERROR(err);
+
+	err = clSetKernelArg(convolution_kernel, 2, sizeof(cl_float) * d1, NULL);
+	CHECK_ERROR(err);
+
+	err = clSetKernelArg(convolution_kernel, 3, sizeof(cl_mem), &buf_output);
+	CHECK_ERROR(err);
+
+	err = clSetKernelArg(convolution_kernel, 4, sizeof(cl_mem), &buf_bias);
+	CHECK_ERROR(err);
+
+	err = clSetKernelArg(convolution_kernel, 5, sizeof(cl_int), &d1);
+	CHECK_ERROR(err);
+
+	err = clSetKernelArg(convolution_kernel, 6, sizeof(cl_int), &d2);
+	CHECK_ERROR(err);
+
+	err = clSetKernelArg(convolution_kernel, 7, sizeof(cl_int), &n);
+	CHECK_ERROR(err);
+
+	err = clEnqueueNDRangeKernel(queue, convolution_kernel, 2, NULL, global_size, local_size, 0, NULL, NULL);
+	CHECK_ERROR(err);
+
+	err = clEnqueueReadBuffer(queue, buf_output, CL_TRUE, 0, sizeof(cl_float) * (d2 * n * n), outputs, 0, NULL, NULL);
+	CHECK_ERROR(err);
+
+	clFinish(queue);
+
+	clReleaseMemObject(buf_input);
+	clReleaseMemObject(buf_output);
+	clReleaseMemObject(buf_filter);
+	clReleaseMemObject(buf_bias);
+}
+
+void fc_layer2(float *input_neuron, float *output_neuron, float *weights, float *biases, int M, int N) {
+
+	size_t global_size[] = { M, N };
+	size_t local_size[] = { 1, N / 2 };
+
+	cl_mem buf_input = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(cl_float) * N, input_neuron, &err);
+	CHECK_ERROR(err);
+
+	cl_mem buf_output = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(cl_float) * M, NULL, &err);
+	CHECK_ERROR(err);
+
+	cl_mem buf_weight = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(cl_float) * M * N, weights, &err);
+	CHECK_ERROR(err);
+
+	//cl_mem buf_bias = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(cl_float) * M, biases, &err);
+	//CHECK_ERROR(err);
+	//
+	//cl_mem buf_sum = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(cl_float) * 2 * M, NULL, &err);
+	//CHECK_ERROR(err);
+
+	err = clSetKernelArg(fc_kernel, 0, sizeof(cl_mem), &buf_output);
+	CHECK_ERROR(err);
+
+	err = clSetKernelArg(fc_kernel, 1, sizeof(cl_mem), &buf_input);
+	CHECK_ERROR(err);
+
+	err = clSetKernelArg(fc_kernel, 2, sizeof(cl_mem), &buf_weight);
+	CHECK_ERROR(err);
+
+	//err = clSetKernelArg(fc_kernel, 3, sizeof(cl_mem), &buf_bias);
+	//CHECK_ERROR(err);
+	//
+	//err = clSetKernelArg(fc_kernel, 4, sizeof(cl_mem), &buf_sum);
+	//CHECK_ERROR(err);
+
+	err = clSetKernelArg(fc_kernel, 3, sizeof(cl_float) * (N / 2), NULL);
+	CHECK_ERROR(err);
+
+	err = clEnqueueNDRangeKernel(queue, fc_kernel, 2, NULL, global_size, local_size, 0, NULL, NULL);
+	CHECK_ERROR(err);
+
+	err = clEnqueueReadBuffer(queue, buf_output, CL_TRUE, 0, sizeof(cl_float) * M, output_neuron, 0, NULL, NULL);
+	CHECK_ERROR(err);
+
+
+	for (int i = 0; i < M; ++i) {
+		output_neuron[i] += biases[i];
+		output_neuron[i] = ReLU(output_neuron[i]);
+	}
+
+
+	clFinish(queue);
+
+	clReleaseMemObject(buf_input);
+	clReleaseMemObject(buf_output);
+	clReleaseMemObject(buf_weight);
+	//clReleaseMemObject(buf_bias);
+	//clReleaseMemObject(buf_sum);
 }
 
 void cnn(float *images, float **network, int *labels, float *confidences, int num_images) {
@@ -300,9 +449,9 @@ void cnn(float *images, float **network, int *labels, float *confidences, int nu
 		convolution_layer(c5_2, c5_3, w5_3, b5_3, 512, 512, 2);
 		pooling_layer(c5_3, p5, 512, 1);
 
-		fc_layer(p5, fc1, w1, b1, 512, 512);
-		fc_layer(fc1, fc2, w2, b2, 512, 512);
-		fc_layer(fc2, fc3, w3, b3, 10, 512);
+		fc_layer2(p5, fc1, w1, b1, 512, 512);
+		fc_layer2(fc1, fc2, w2, b2, 512, 512);
+		fc_layer2(fc2, fc3, w3, b3, 10, 512);
 
 		softmax(fc3, 10);
 

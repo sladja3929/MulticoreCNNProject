@@ -55,5 +55,11 @@
     <None Include="pooling_kernel.cl">
       <Filter>소스 파일</Filter>
     </None>
+    <None Include="convolution_kernel.cl">
+      <Filter>소스 파일</Filter>
+    </None>
+    <None Include="fc_kernel.cl">
+      <Filter>소스 파일</Filter>
+    </None>
   </ItemGroup>
 </Project>
