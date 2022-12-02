@@ -118,16 +118,22 @@ static void fc_layer(float* input_neuron, float* output_neuron, float* weights, 
 	err = clSetKernelArg(kernel_reduction, 0, sizeof(cl_mem), &buf_output);
 	CHECK_ERROR(err);
 	
-	clEnqueueNDRangeKernel(queue, kernel_reduction, 2, NULL, global_size, local_size, 0, NULL, NULL);
+	//clEnqueueNDRangeKernel(queue, kernel_reduction, 2, NULL, global_size, local_size, 0, NULL, NULL);
 
-    err = clEnqueueReadBuffer(queue, buf_output, CL_TRUE, 0, sizeof(float) * M, output_neuron, 0, NULL, NULL);
-    CHECK_ERROR(err);
+	//err = clEnqueueReadBuffer(queue, buf_output, CL_TRUE, 0, sizeof(float) * M, output_neuron, 0, NULL, NULL);
+	float* tmp = (float*)malloc(sizeof(float) * M * N);
+	err = clEnqueueReadBuffer(queue, buf_output, CL_TRUE, 0, sizeof(float) * M * N, tmp, 0, NULL, NULL);
+	CHECK_ERROR(err);
 
-	for (int i = 0; i < M; i++) {
-		output_neuron[i] = ReLU(output_neuron[i]);
-		output_neuron[i] += biases[i];
+	for (int j = 0; j < M; j++) {
+		output_neuron[j] = 0;
+		for (int i = 0; i < N; i++) {
+			output_neuron[j] += tmp[i * M + j];
+		}
+		output_neuron[j] += biases[j];
+		output_neuron[j] = ReLU(output_neuron[j]);
 	}
-	printf("%f ", output_neuron[0]);
+	free(tmp);
 }
 
 static void pooling2x2(float* input, float* output, int N) {

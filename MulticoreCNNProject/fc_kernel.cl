@@ -14,6 +14,6 @@ __kernel void reduction (__global float* output) {
 
 	for (int p = get_global_size(1) / 2; p >= 1; p = p >> 1) {
 		if (i < p) output[i * M + j] += output[(i + p) * M + j];
-		barrier(CLK_LOCAL_MEM_FENCE);
+		barrier(CLK_GLOBAL_MEM_FENCE);
 	}
 }
