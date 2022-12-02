@@ -1,16 +1,19 @@
+// global: { d, n, n }
 __kernel void pooling(__global float *inputs, __global float *outputs, __private int n) {
-	int m = get_global_id(0);
-	int i = get_global_id(1);
-	int j = get_global_id(2);
+	int g_id = get_global_id(0);
+	int g_i = g_id / (n * n);
+	int g_j = g_id / n % n;
+	int g_k = g_id % n;
+
+	float *input = inputs + g_i * n * n * 4;
+	float *output = outputs + g_i * n * n;
 
 	float max = 0, pixel;
-	int i_i = m * (n * n * 4);
-	for (int k = 0; k < 2; ++k) {
-		int i_j = (i * 2 + k) * (2 * n);
-		for (int l = 0; l < 2; ++l) {
-			pixel = inputs[i_i + i_j + (j * 2 + l)];
+	for (int i = 0; i < 2; ++i) {
+		for (int j = 0; j < 2; ++j) {
+			pixel = input[((g_j * 2 + i) * (2 * n)) + (g_k * 2 + j)];
 			max = (max > pixel) ? max : pixel;
 		}
 	}
-	outputs[(m * n * n) + (i * n) + j] = max;
+	output[g_j * n + g_k] = max;
 }

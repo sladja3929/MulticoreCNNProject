@@ -55,73 +55,6 @@ char *GetSourceCode(const char *file_name, size_t * len) {
 	return source_code;
 }
 
-static void convolution3x3(float *input, float *output, float *filter, int N) {
-	int i, j, k, l;
-	for (i = 0; i < N; i++) {
-		for (j = 0; j < N; j++) {
-			float sum = 0;
-			for (k = 0; k < 3; k++) {
-				for (l = 0; l < 3; l++) {
-					int x = i + k - 1;
-					int y = j + l - 1;
-					if (x >= 0 && x < N && y >= 0 && y < N)
-						sum += input[x * N + y] * filter[k * 3 + l];
-				}
-			}
-			output[i * N + j] += sum;
-		}
-	}
-}
-
-/*
- * D2 = output channel size
- * D1 = input channel size
- * N = width and height of an input image
- * input image is zero-padded by 1.
- * Thus, input is (D1, N, N) and output is (D2, N, N)
- */
-#define ReLU(x) (((x)>0)?(x):0)
-static void convolution_layer(float *inputs, float *outputs, float *filters, float *biases, int D2, int D1, int N) {
-	int i, j;
-
-	memset(outputs, 0, sizeof(float) * N * N * D2);
-
-	//
-	for (j = 0; j < D2; j++) {
-		for (i = 0; i < D1; i++) {
-			float *input = inputs + N * N * i;
-			float *output = outputs + N * N * j;
-			float *filter = filters + 3 * 3 * (j * D1 + i);
-			convolution3x3(input, output, filter, N);
-		}
-	}
-
-	//
-	for (i = 0; i < D2; i++) {
-		float *output = outputs + N * N * i;
-		float bias = biases[i];
-		for (j = 0; j < N * N; j++) {
-			output[j] = ReLU(output[j] + bias);
-		}
-	}
-}
-
-/*
- * M = output size
- * N = input size
- */
-static void fc_layer(float *input_neuron, float *output_neuron, float *weights, float *biases, int M, int N) {
-	int i, j;
-	for (j = 0; j < M; j++) {
-		float sum = 0;
-		for (i = 0; i < N; i++) {
-			sum += input_neuron[i] * weights[j * N + i];
-		}
-		sum += biases[j];
-		output_neuron[j] = ReLU(sum);
-	}
-}
-
 static void softmax(float *output, int N) {
 	int i;
 	float max = output[0];
@@ -167,7 +100,6 @@ cl_kernel pooling_kernel;
 cl_kernel fc_kernel;
 
 void cnn_init() {
-	// 플랫폼 정보 얻어오기 (플랫폼 개수 = 1)
 	err = clGetPlatformIDs(1, &platform, NULL);
 	CHECK_ERROR(err);
 
@@ -175,11 +107,9 @@ void cnn_init() {
 	err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, 1, &device, NULL);
 	CHECK_ERROR(err);
 
-	// 디바이스 1개 사용하는 context
 	context = clCreateContext(NULL, 1, &device, NULL, NULL, &err);
 	CHECK_ERROR(err);
 
-	// in-order command queue 생성
 	queue = clCreateCommandQueueWithProperties(context, device, 0, &err);
 	CHECK_ERROR(err);
 
@@ -196,9 +126,9 @@ void cnn_init() {
 	fc_program = clCreateProgramWithSource(context, 1, (const char **)&source_code, &source_size, &err);
 	CHECK_ERROR(err);
 
-	//err = clBuildProgram(convolution_program, 1, &device, "-cl-fast-relaxed-math", NULL, NULL);
-	//CHECK_BUILD_ERROR(convolution_program);
-	//CHECK_ERROR(err);
+	err = clBuildProgram(convolution_program, 1, &device, "-cl-fast-relaxed-math", NULL, NULL);
+	CHECK_BUILD_ERROR(convolution_program);
+	CHECK_ERROR(err);
 
 	err = clBuildProgram(pooling_program, 1, &device, "-cl-fast-relaxed-math", NULL, NULL);
 	CHECK_BUILD_ERROR(pooling_program);
@@ -208,8 +138,8 @@ void cnn_init() {
 	CHECK_BUILD_ERROR(fc_program);
 	CHECK_ERROR(err);
 
-	//convolution_kernel = clCreateKernel(convolution_program, "convolution", &err);
-	//CHECK_ERROR(err);
+	convolution_kernel = clCreateKernel(convolution_program, "convolution", &err);
+	CHECK_ERROR(err);
 
 	pooling_kernel = clCreateKernel(pooling_program, "pooling", &err);
 	CHECK_ERROR(err);
@@ -218,9 +148,9 @@ void cnn_init() {
 	CHECK_ERROR(err);
 }
 
-// input is (D, N * 2, N * 2) and output is (D, N, N).
-void pooling_layer(float *inputs, float *outputs, int D, int N) {
-	size_t global_size[3] = { D, N ,N };
+// input is (D, N*2, N*2) and output is (D, N, N)
+static void pooling_layer(float *inputs, float *outputs, int D, int N) {
+	size_t global_size[] = { D * N * N };
 
 	cl_mem buf_input = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(cl_float) * (D * N * N * 4), inputs, &err);
 	CHECK_ERROR(err);
@@ -237,7 +167,7 @@ void pooling_layer(float *inputs, float *outputs, int D, int N) {
 	err = clSetKernelArg(pooling_kernel, 2, sizeof(cl_int), &N);
 	CHECK_ERROR(err);
 
-	err = clEnqueueNDRangeKernel(queue, pooling_kernel, 3, NULL, global_size, NULL, 0, NULL, NULL);
+	err = clEnqueueNDRangeKernel(queue, pooling_kernel, 1, NULL, global_size, NULL, 0, NULL, NULL);
 	CHECK_ERROR(err);
 
 	err = clEnqueueReadBuffer(queue, buf_output, CL_TRUE, 0, sizeof(cl_float) * (D * N * N), outputs, 0, NULL, NULL);
@@ -249,18 +179,15 @@ void pooling_layer(float *inputs, float *outputs, int D, int N) {
 	clReleaseMemObject(buf_output);
 }
 
-// *Thus, input is(D1, N, N) and output is(D2, N, N)
-
-void convolution_layer2(float *inputs, float *outputs, float *filters, float *biases, int d2, int d1, int n) {
-	//memset(outputs, 0, sizeof(float) * n * n * d2);
-
+// input is (D1, N, N) and output is (D2, N, N)
+static void convolution_layer(float *inputs, float *outputs, float *filters, float *biases, int d2, int d1, int n) {
 	size_t global_size[] = { d1 , d2 * n * n };
 	size_t local_size[] = { d1, 1 };
 
 	cl_mem buf_input = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(cl_float) * (d1 * n * n), inputs, &err);
 	CHECK_ERROR(err);
 
-	cl_mem buf_output = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(cl_float) * (d2 * n * n), NULL, &err);
+	cl_mem buf_output = clCreateBuffer(context, CL_MEM_WRITE_ONLY, sizeof(cl_float) * (d2 * n * n), NULL, &err);
 	CHECK_ERROR(err);
 
 	cl_mem buf_filter = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(cl_float) * (d2 * d1 * 3 * 3), filters, &err);
@@ -307,26 +234,23 @@ void convolution_layer2(float *inputs, float *outputs, float *filters, float *bi
 	clReleaseMemObject(buf_bias);
 }
 
-void fc_layer2(float *input_neuron, float *output_neuron, float *weights, float *biases, int M, int N) {
-
+// input is (N) and output is (M)
+static void fc_layer(float *input_neuron, float *output_neuron, float *weights, float *biases, int M, int N) {
 	size_t global_size[] = { M, N };
-	size_t local_size[] = { 1, N / 2 };
+	size_t local_size[] = { 1, N };
 
-	cl_mem buf_input = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(cl_float) * N, input_neuron, &err);
+	cl_mem buf_output = clCreateBuffer(context, CL_MEM_WRITE_ONLY, sizeof(cl_float) * M, NULL, &err);
 	CHECK_ERROR(err);
 
-	cl_mem buf_output = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(cl_float) * M, NULL, &err);
+	cl_mem buf_input = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(cl_float) * N, input_neuron, &err);
 	CHECK_ERROR(err);
 
 	cl_mem buf_weight = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(cl_float) * M * N, weights, &err);
 	CHECK_ERROR(err);
 
-	//cl_mem buf_bias = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(cl_float) * M, biases, &err);
-	//CHECK_ERROR(err);
-	//
-	//cl_mem buf_sum = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(cl_float) * 2 * M, NULL, &err);
-	//CHECK_ERROR(err);
-
+	cl_mem buf_bias = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(cl_float) * M, biases, &err);
+	CHECK_ERROR(err);
+	
 	err = clSetKernelArg(fc_kernel, 0, sizeof(cl_mem), &buf_output);
 	CHECK_ERROR(err);
 
@@ -336,13 +260,10 @@ void fc_layer2(float *input_neuron, float *output_neuron, float *weights, float 
 	err = clSetKernelArg(fc_kernel, 2, sizeof(cl_mem), &buf_weight);
 	CHECK_ERROR(err);
 
-	//err = clSetKernelArg(fc_kernel, 3, sizeof(cl_mem), &buf_bias);
-	//CHECK_ERROR(err);
-	//
-	//err = clSetKernelArg(fc_kernel, 4, sizeof(cl_mem), &buf_sum);
-	//CHECK_ERROR(err);
-
-	err = clSetKernelArg(fc_kernel, 3, sizeof(cl_float) * (N / 2), NULL);
+	err = clSetKernelArg(fc_kernel, 3, sizeof(cl_mem), &buf_bias);
+	CHECK_ERROR(err);
+	
+	err = clSetKernelArg(fc_kernel, 4, sizeof(cl_float) * N, NULL);
 	CHECK_ERROR(err);
 
 	err = clEnqueueNDRangeKernel(queue, fc_kernel, 2, NULL, global_size, local_size, 0, NULL, NULL);
@@ -351,20 +272,12 @@ void fc_layer2(float *input_neuron, float *output_neuron, float *weights, float 
 	err = clEnqueueReadBuffer(queue, buf_output, CL_TRUE, 0, sizeof(cl_float) * M, output_neuron, 0, NULL, NULL);
 	CHECK_ERROR(err);
 
-
-	for (int i = 0; i < M; ++i) {
-		output_neuron[i] += biases[i];
-		output_neuron[i] = ReLU(output_neuron[i]);
-	}
-
-
 	clFinish(queue);
 
 	clReleaseMemObject(buf_input);
 	clReleaseMemObject(buf_output);
 	clReleaseMemObject(buf_weight);
-	//clReleaseMemObject(buf_bias);
-	//clReleaseMemObject(buf_sum);
+	clReleaseMemObject(buf_bias);
 }
 
 void cnn(float *images, float **network, int *labels, float *confidences, int num_images) {
@@ -449,9 +362,9 @@ void cnn(float *images, float **network, int *labels, float *confidences, int nu
 		convolution_layer(c5_2, c5_3, w5_3, b5_3, 512, 512, 2);
 		pooling_layer(c5_3, p5, 512, 1);
 
-		fc_layer2(p5, fc1, w1, b1, 512, 512);
-		fc_layer2(fc1, fc2, w2, b2, 512, 512);
-		fc_layer2(fc2, fc3, w3, b3, 10, 512);
+		fc_layer(p5, fc1, w1, b1, 512, 512);
+		fc_layer(fc1, fc2, w2, b2, 512, 512);
+		fc_layer(fc2, fc3, w3, b3, 10, 512);
 
 		softmax(fc3, 10);
 
