@@ -176,7 +176,7 @@
     <None Include="network.bin" />
     <None Include="pooling_kernel.cl" />
     <None Include="result_kernel.cl" />
-    <None Include="softmax.cl" />
+    <None Include="softmax_kernel.cl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

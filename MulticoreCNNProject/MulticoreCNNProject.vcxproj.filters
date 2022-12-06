@@ -65,7 +65,7 @@
     <None Include="network.bin">
       <Filter>리소스 파일</Filter>
     </None>
-    <None Include="softmax.cl">
+    <None Include="softmax_kernel.cl">
       <Filter>소스 파일</Filter>
     </None>
   </ItemGroup>

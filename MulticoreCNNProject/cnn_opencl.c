@@ -8,7 +8,7 @@
 #include <fcntl.h>
 #include "cnn.h"
 
-const int PARALLEL = 1;
+const int PARALLEL = 100;
 
 #define CHECK_ERROR(err) \
     if(err != CL_SUCCESS) { \
@@ -281,7 +281,7 @@ static void softmax(float* output, int N) {
 	size_t global_size = PARALLEL * N;
 	size_t local_size = N;
 
-	cl_mem buf_output = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(cl_float) * (PARALLEL * N), output, &err);
+	cl_mem buf_output = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(cl_float) * (PARALLEL * N), output, &err);
 	CHECK_ERROR(err);
 
 	err = clSetKernelArg(softmax_kernel, 0, sizeof(cl_mem), &buf_output);
@@ -300,6 +300,23 @@ static void softmax(float* output, int N) {
 	CHECK_ERROR(err);
 
 	clFinish(queue);
+
+	clReleaseMemObject(buf_output);
+}
+
+static void softmax_1(float* output, int N) {
+	int i;
+	float max = output[0];
+	for (i = 1; i < N; i++) {
+		max = (output[i] > max) ? output[i] : max;
+	}
+	float sum = 0;
+	for (i = 0; i < N; i++) {
+		sum += exp(output[i] - max);
+	}
+	for (i = 0; i < N; i++) {
+		output[i] = exp(output[i] - max) / sum;
+	}
 }
 
 void cnn(float *images, float **network, int *labels, float *confidences, int num_images) {
@@ -393,6 +410,7 @@ void cnn(float *images, float **network, int *labels, float *confidences, int nu
 		float *result;
 		for (int j = 0; j < PARALLEL; ++j) {
 			result = fc3 + 10 * j;
+			//softmax_1(fc3, 10);
 			labels[i + j] = find_max(result, 10);
 			confidences[i + j] = result[labels[i + j]];
 		}
