@@ -150,8 +150,8 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="cnn_seq.c">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="compare.c" />
     <ClCompile Include="main.c">
@@ -168,7 +168,14 @@
     <ClInclude Include="compare.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="answer.out" />
+    <None Include="cifar10_image.bin" />
+    <None Include="cifar10_label.bin" />
+    <None Include="convolution_kernel.cl" />
     <None Include="fc_kernel.cl" />
+    <None Include="network.bin" />
+    <None Include="pooling_kernel.cl" />
+    <None Include="result_kernel.cl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

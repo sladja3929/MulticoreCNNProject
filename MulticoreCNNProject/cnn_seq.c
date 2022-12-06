@@ -11,7 +11,7 @@ static void pooling2x2(float* input, float* output, int N) {
 			float max = 0;
 			for (k = 0; k < 2; k++) {
 				for (l = 0; l < 2; l++) {
-					float pixel = input[(i * 2 + k) * 2 * N + j * 2 + l];
+					float pixel = input[((i * 2 + k) * (2 * N)) + (j * 2 + l)];
 					max = (max > pixel) ? max : pixel;
 				}
 			}
