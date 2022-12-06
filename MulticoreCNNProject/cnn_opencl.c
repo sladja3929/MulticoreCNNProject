@@ -8,7 +8,7 @@
 #include <fcntl.h>
 #include "cnn.h"
 
-const int PARALLEL = 30;
+const int PARALLEL = 1;
 
 #define CHECK_ERROR(err) \
     if(err != CL_SUCCESS) { \
@@ -57,21 +57,6 @@ char *GetSourceCode(const char *file_name, size_t * len) {
 	return source_code;
 }
 
-static void softmax(float *output, int N) {
-	int i;
-	float max = output[0];
-	for (i = 1; i < N; i++) {
-		max = (output[i] > max) ? output[i] : max;
-	}
-	float sum = 0;
-	for (i = 0; i < N; i++) {
-		sum += exp(output[i] - max);
-	}
-	for (i = 0; i < N; i++) {
-		output[i] = exp(output[i] - max) / sum;
-	}
-}
-
 static int find_max(float *fc, int N) {
 	int i;
 	int maxid = 0;
@@ -97,9 +82,11 @@ cl_command_queue queue;
 cl_program convolution_program;
 cl_program pooling_program;
 cl_program fc_program;
+cl_program softmax_program;
 cl_kernel convolution_kernel;
 cl_kernel pooling_kernel;
 cl_kernel fc_kernel;
+cl_kernel softmax_kernel;
 
 void cnn_init() {
 	err = clGetPlatformIDs(1, &platform, NULL);
@@ -128,6 +115,10 @@ void cnn_init() {
 	fc_program = clCreateProgramWithSource(context, 1, (const char **)&source_code, &source_size, &err);
 	CHECK_ERROR(err);
 
+	source_code = GetSourceCode("softmax_kernel.cl", &source_size);
+	softmax_program = clCreateProgramWithSource(context, 1, (const char**)&source_code, &source_size, &err);
+	CHECK_ERROR(err);
+
 	err = clBuildProgram(convolution_program, 1, &device, "-cl-fast-relaxed-math", NULL, NULL);
 	CHECK_BUILD_ERROR(convolution_program);
 	CHECK_ERROR(err);
@@ -140,6 +131,10 @@ void cnn_init() {
 	CHECK_BUILD_ERROR(fc_program);
 	CHECK_ERROR(err);
 
+	err = clBuildProgram(softmax_program, 1, &device, "-cl-fast-relaxed-math", NULL, NULL);
+	CHECK_BUILD_ERROR(softmax_program);
+	CHECK_ERROR(err);
+
 	convolution_kernel = clCreateKernel(convolution_program, "convolution", &err);
 	CHECK_ERROR(err);
 
@@ -147,6 +142,9 @@ void cnn_init() {
 	CHECK_ERROR(err);
 
 	fc_kernel = clCreateKernel(fc_program, "fc", &err);
+	CHECK_ERROR(err);
+
+	softmax_kernel = clCreateKernel(softmax_program, "softmax", &err);
 	CHECK_ERROR(err);
 }
 
@@ -279,6 +277,31 @@ static void fc_layer(float *input_neuron, float *output_neuron, float *weights, 
 	clReleaseMemObject(buf_bias);
 }
 
+static void softmax(float* output, int N) {
+	size_t global_size = PARALLEL * N;
+	size_t local_size = N;
+
+	cl_mem buf_output = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(cl_float) * (PARALLEL * N), output, &err);
+	CHECK_ERROR(err);
+
+	err = clSetKernelArg(softmax_kernel, 0, sizeof(cl_mem), &buf_output);
+	CHECK_ERROR(err);
+
+	err = clSetKernelArg(softmax_kernel, 1, sizeof(cl_float), NULL);
+	CHECK_ERROR(err);
+
+	err = clSetKernelArg(softmax_kernel, 2, sizeof(cl_float), NULL);
+	CHECK_ERROR(err);
+
+	err = clEnqueueNDRangeKernel(queue, softmax_kernel, 1, NULL, &global_size, &local_size, 0, NULL, NULL);
+	CHECK_ERROR(err);
+
+	err = clEnqueueReadBuffer(queue, buf_output, CL_TRUE, 0, sizeof(cl_float) * N * PARALLEL, output, 0, NULL, NULL);
+	CHECK_ERROR(err);
+
+	clFinish(queue);
+}
+
 void cnn(float *images, float **network, int *labels, float *confidences, int num_images) {
 	// slice the network into weights and biases
 	float *w1_1, *b1_1, *w1_2, *b1_2;
@@ -365,10 +388,11 @@ void cnn(float *images, float **network, int *labels, float *confidences, int nu
 		fc_layer(fc1, fc2, w2, b2, 512, 512);
 		fc_layer(fc2, fc3, w3, b3, 10, 512);
 
+		softmax(fc3, 10);
+
 		float *result;
 		for (int j = 0; j < PARALLEL; ++j) {
 			result = fc3 + 10 * j;
-			softmax(result, 10);
 			labels[i + j] = find_max(result, 10);
 			confidences[i + j] = result[labels[i + j]];
 		}

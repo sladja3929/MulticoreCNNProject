@@ -55,5 +55,18 @@
     <None Include="result_kernel.cl">
       <Filter>소스 파일</Filter>
     </None>
+    <None Include="answer.out" />
+    <None Include="cifar10_image.bin">
+      <Filter>리소스 파일</Filter>
+    </None>
+    <None Include="cifar10_label.bin">
+      <Filter>리소스 파일</Filter>
+    </None>
+    <None Include="network.bin">
+      <Filter>리소스 파일</Filter>
+    </None>
+    <None Include="softmax.cl">
+      <Filter>소스 파일</Filter>
+    </None>
   </ItemGroup>
 </Project>
