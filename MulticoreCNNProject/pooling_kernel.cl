@@ -7,15 +7,17 @@ __kernel void pooling(__global float *inputs, __global float *outputs, __private
 	int g_k = g_id / n % n;
 	int g_l = g_id % n;
 
-	float *input = inputs + (g_i * d * n * n * 4) + (g_j * n * n * 4);
-	float *output = outputs + (g_i * d * n * n) + (g_j * n * n);
+	int input_idx = (g_i * d * n * n * 4) + (g_j * n * n * 4);
+	
 
 	float max = 0, pixel;
 	for (int i = 0; i < 2; ++i) {
 		for (int j = 0; j < 2; ++j) {
-			pixel = input[((g_k * 2 + i) * (2 * n)) + (g_l * 2 + j)];
+			int idx = input_idx + ((g_k * 2 + i) * (2 * n)) + (g_l * 2 + j);
+			pixel = inputs[idx];
 			max = (max > pixel) ? max : pixel;
 		}
 	}
-	output[g_k * n + g_l] = max;
+
+	outputs[(g_i * d * n * n) + (g_j * n * n) + (g_k * n + g_l)] = max;
 }
