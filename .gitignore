@@ -1,6 +1,7 @@
 # Data
 *.bin
 *.out
+answer.txt
 
 # Prerequisites
 *.d
