@@ -1,6 +1,6 @@
 // globalsize: { P * D1, D2 * N * N }
 // localsize: { D1, 1 }
-__kernel void convolution(__global float *inputs, __global float *filters, __local float *filterout, __global float *outputs, __global float *biases, __private int n) {
+__kernel void convolution(__global float *inputs, __global float *filters, __local float *filterout, __global float *outputs, __constant float *biases, __private int n) {
 	int d1 = get_local_size(0);
 	int d2 = get_global_size(1) / (n * n);
 
@@ -21,7 +21,7 @@ __kernel void convolution(__global float *inputs, __global float *filters, __loc
 			int x = g_k + i - 1;
 			int y = g_l + j - 1;
 			if (x >= 0 && x < n && y >= 0 && y < n)
-				sum += input[x * n + y] * filter[i * 3 + j];	// filter °è»êÇÑ ÈÄ local memory¿¡ ÀúÀå	
+				sum += input[x * n + y] * filter[i * 3 + j];	// filter ê³„ì‚°í•œ í›„ local memoryì— ì €ìž¥	
 		}
 	}
 
