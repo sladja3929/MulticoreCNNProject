@@ -1,6 +1,7 @@
 // globalsize: { P * M, N }
 // localsize: { 1, N }
-__kernel void fc(__global float *output, __global float *input, __global float *weights, __global float *biases, __local float *l_sum, __private int PARALLEL) {
+
+__kernel void fc(__global float *output, __constant float *input, __constant float *weights, __constant float *biases, __local float *l_sum, __private int PARALLEL) {
 	int g_id = get_global_id(0);
 	int n = get_global_size(1);
 	int m = get_global_size(0) / PARALLEL;
@@ -18,8 +19,8 @@ __kernel void fc(__global float *output, __global float *input, __global float *
 
 	if (l_id == 0) {
 		int o_idx = g_i * m + g_j;
-		output[o_idx] = l_sum[0];
-		output[o_idx] += biases[g_j];
-		output[o_idx] = (output[o_idx] > 0) ? output[o_idx] : 0;
+		float result = l_sum[0] + biases[g_j];
+		result = (result > 0) ? result : 0;
+		output[o_idx] = result;
 	}
 }
