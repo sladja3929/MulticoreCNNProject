@@ -72,11 +72,11 @@ cl_command_queue queue, write_queue, kernel_queue;
 cl_program convolution_program;
 cl_program pooling_program;
 cl_program fc_program;
-cl_program softmax_program;
+//cl_program softmax_program;
 cl_kernel convolution_kernel, convolution_kernel2;
 cl_kernel pooling_kernel, pooling_kernel2;
 cl_kernel fc_kernel, fc_kernel2;
-cl_kernel softmax_kernel;
+//cl_kernel softmax_kernel;
 cl_mem buf1, buf1_1, buf2, buf2_1, buf3, buf4;
 
 void cnn_init() {

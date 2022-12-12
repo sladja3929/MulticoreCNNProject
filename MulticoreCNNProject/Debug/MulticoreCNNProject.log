@@ -1,1 +1,6 @@
-﻿  MulticoreCNNProject.vcxproj -> D:\unity\MulticoreCNNProject\Debug\MulticoreCNNProject.exe
+﻿  cnn_opencl.c
+D:\unity\MulticoreCNNProject\MulticoreCNNProject\cnn_opencl.c(1,1): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
+D:\unity\MulticoreCNNProject\MulticoreCNNProject\cnn_opencl.c(393,30): warning C4244: '+=': 'double'에서 'float'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+D:\unity\MulticoreCNNProject\MulticoreCNNProject\cnn_opencl.c(396,41): warning C4244: '=': 'double'에서 'float'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+D:\unity\MulticoreCNNProject\MulticoreCNNProject\cnn_opencl.c(469,14): warning C4013: 'clock'이(가) 정의되지 않았습니다. extern은 int형을 반환하는 것으로 간주합니다.
+  MulticoreCNNProject.vcxproj -> D:\unity\MulticoreCNNProject\Debug\MulticoreCNNProject.exe

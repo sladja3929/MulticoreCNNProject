@@ -168,7 +168,6 @@
     <ClInclude Include="compare.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="answer.out" />
     <None Include="cifar10_image.bin" />
     <None Include="cifar10_label.bin" />
     <None Include="convolution_kernel.cl" />

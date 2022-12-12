@@ -55,7 +55,6 @@
     <None Include="result_kernel.cl">
       <Filter>소스 파일</Filter>
     </None>
-    <None Include="answer.out" />
     <None Include="cifar10_image.bin">
       <Filter>리소스 파일</Filter>
     </None>
