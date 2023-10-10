@@ -6,9 +6,16 @@ OpenCL gpu 병렬 프로그래밍을 활용하여 CNN(Convolutional Neural Netwo
 ![image](https://github.com/sladja3929/MulticoreCNNProject/assets/43125863/ddbe4772-ae9e-4f09-9aa0-c5e3537b21ac)
 
 ### 목차
-기술 스택
-구현 기능
-실행 결과
++ 팀 소개
++ 기술 스택
++ 구현 기능
++ 실행 결과
+
+### 팀 소개
+팀원 구성: 권오민, 조민수, 나원준
++ 권오민: Pooling Layer 구현
++ 조민수: Convolution Layer 구현
++ 나원준: FC Layer 구현, cpu 연산 구현
 
 ### 기술 스택
 OpenCL
