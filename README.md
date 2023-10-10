@@ -1,7 +1,9 @@
 # MulticoreCNNProject
 *Sejong Univ. Multicore Programming*
 
-image OpenCL 병렬 프로그래밍을 활용하여 CNN(Convolutional Neural Network) 알고리즘을 가속화하는 프로젝트입니다.
+OpenCL gpu 병렬 프로그래밍을 활용하여 CNN(Convolutional Neural Network) 알고리즘을 가속화하는 프로젝트입니다.
+
+![image](https://github.com/sladja3929/MulticoreCNNProject/assets/43125863/ddbe4772-ae9e-4f09-9aa0-c5e3537b21ac)
 
 ### 목차
 기술 스택
