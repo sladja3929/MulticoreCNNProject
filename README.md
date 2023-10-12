@@ -3,7 +3,7 @@
 
 OpenCL gpu 병렬 프로그래밍을 활용하여 CNN(Convolutional Neural Network) 알고리즘을 가속화하는 프로젝트입니다.
 
-![image](https://github.com/sladja3929/MulticoreCNNProject/assets/43125863/ddbe4772-ae9e-4f09-9aa0-c5e3537b21ac)
+![그림1](https://github.com/sladja3929/MulticoreCNNProject/assets/43125863/ef0742e5-3aad-4b91-8c0d-00ea07daa370)
 
 ## 목차
 + 팀 소개
