@@ -14,9 +14,6 @@ OpenCL gpu 병렬 프로그래밍을 활용하여 CNN(Convolutional Neural Netwo
 
 ## 팀 소개
 팀원 구성: 권오민, 조민수, 나원준
-+ 권오민: Pooling Layer 구현
-+ 조민수: Convolution Layer 구현
-+ 나원준: FC Layer 구현
 
 
 ## 기술 스택
